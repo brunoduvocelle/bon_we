@@ -3,15 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Bon Week-end</title>
+    <title>Bon Week-end - Double Explosion</title>
     <style>
         :root {
-            --bg-start: #1a001a; /* Teinte légèrement violacée pour le rose */
+            --bg-start: #1a001a;
             --bg-end: #000000;
             --pink: #FF69B4;
-            --pink-light: #FFB6C1;
             --yellow: #FFD700;
-            --yellow-light: #FFFACD;
             --white: #FFFFFF;
         }
 
@@ -82,8 +80,6 @@
             cursor: pointer;
         }
 
-        .h2 { animation-delay: 0.15s; }
-
         @keyframes superBeat {
             0% { transform: scale(1); color: var(--pink); filter: drop-shadow(0 0 5px var(--pink)); }
             15% { transform: scale(1.3); color: var(--yellow); filter: drop-shadow(0 0 25px var(--yellow)); }
@@ -101,7 +97,7 @@
         
         <div class="hearts">
             <div class="heart" id="heart1">❤</div>
-            <div class="heart h2" id="heart2">❤</div>
+            <div class="heart" id="heart2" style="animation-delay: 0.15s;">❤</div>
         </div>
     </div>
 
@@ -116,6 +112,7 @@
         canvas.height = window.innerHeight;
         
         let particles = [];
+        const COLORS = ['#FFD700', '#FF69B4']; // Uniquement Jaune et Rose
 
         TEXT_CONTENT.split('').forEach(char => {
             const span = document.createElement('span');
@@ -130,23 +127,15 @@
             const h = window.innerHeight;
             const isMobile = w < 800;
             const count = chars.length;
-
             let radius, fontSize, angleStep, startAngle, yOffset;
 
             if (isMobile) {
-                radius = w * 0.45;
-                fontSize = `${w * 0.10}px`;
-                angleStep = 10;
-                yOffset = h * 0.45;
+                radius = w * 0.45; fontSize = `${w * 0.10}px`; angleStep = 10; yOffset = h * 0.45;
             } else {
-                radius = h * 0.8;
-                fontSize = `${h * 0.12}px`;
-                angleStep = 5;
-                yOffset = h * 0.65;
+                radius = h * 0.8; fontSize = `${h * 0.12}px`; angleStep = 5; yOffset = h * 0.65;
             }
 
             startAngle = -(angleStep * (count - 1)) / 2;
-
             chars.forEach((char, i) => {
                 const angle = startAngle + (i * angleStep);
                 char.style.fontSize = fontSize;
@@ -157,25 +146,24 @@
         };
 
         class Particle {
-            constructor(x, y, color) {
+            constructor(x, y, color, velocity, canSplit = false) {
                 this.x = x;
                 this.y = y;
                 this.color = color;
-                // Vitesse légèrement augmentée pour plus d'abondance visuelle
-                this.velocity = {
-                    x: (Math.random() - 0.5) * 15,
-                    y: (Math.random() - 0.5) * 15
-                };
+                this.velocity = velocity;
                 this.alpha = 1;
-                this.friction = 0.97; // Plus fluide
-                this.gravity = 0.12;
+                this.friction = 0.96;
+                this.gravity = 0.15;
+                this.canSplit = canSplit;
+                this.life = 0;
+                this.splitTime = Math.floor(Math.random() * 20) + 15; // Temps avant le 2ème étage
             }
 
             draw() {
                 ctx.save();
                 ctx.globalAlpha = this.alpha;
                 ctx.beginPath();
-                ctx.arc(this.x, this.y, Math.random() * 4, 0, Math.PI * 2);
+                ctx.arc(this.x, this.y, this.canSplit ? 4 : 2, 0, Math.PI * 2);
                 ctx.fillStyle = this.color;
                 ctx.fill();
                 ctx.restore();
@@ -187,46 +175,60 @@
                 this.velocity.y += this.gravity;
                 this.x += this.velocity.x;
                 this.y += this.velocity.y;
-                this.alpha -= 0.012;
+                this.alpha -= this.canSplit ? 0.01 : 0.02;
+                this.life++;
+
+                // Logique du 2ème étage (éclatement)
+                if (this.canSplit && this.life === this.splitTime) {
+                    this.split();
+                }
+            }
+
+            split() {
+                for (let i = 0; i < 20; i++) {
+                    const v = {
+                        x: (Math.random() - 0.5) * 8,
+                        y: (Math.random() - 0.5) * 8
+                    };
+                    particles.push(new Particle(this.x, this.y, this.color, v, false));
+                }
+                this.alpha = 0; // La particule mère disparaît
             }
         }
 
-        const explode = (x, y) => {
-            // Palette Jaune et Rose
-            const colors = ['#FFD700', '#FF69B4', '#FF1493', '#FFFACD', '#FFFFFF'];
-            // Nombre de particules augmenté pour "l'abondance"
-            for (let i = 0; i < 150; i++) {
-                particles.push(new Particle(x, y, colors[Math.floor(Math.random() * colors.length)]));
+        const createFirework = (x, y) => {
+            // Premier étage : lancement de particules mères
+            for (let i = 0; i < 40; i++) {
+                const color = COLORS[Math.floor(Math.random() * COLORS.length)];
+                const v = {
+                    x: (Math.random() - 0.5) * 18,
+                    y: (Math.random() - 0.5) * 18
+                };
+                particles.push(new Particle(x, y, color, v, true));
             }
         };
 
         const animate = () => {
             requestAnimationFrame(animate);
-            ctx.fillStyle = 'rgba(10, 0, 10, 0.2)'; 
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.25)'; 
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            particles.forEach((p, i) => {
-                if (p.alpha > 0) {
-                    p.update();
-                    p.draw();
-                } else {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                particles[i].update();
+                if (particles[i].alpha <= 0) {
                     particles.splice(i, 1);
+                } else {
+                    particles[i].draw();
                 }
-            });
+            }
         };
 
-        // Gestion Multi-touch (autant d'explosions que de doigts)
         window.addEventListener('touchstart', (e) => {
             e.preventDefault();
-            Array.from(e.touches).forEach(touch => {
-                explode(touch.clientX, touch.clientY);
-            });
+            Array.from(e.touches).forEach(t => createFirework(t.clientX, t.clientY));
         }, { passive: false });
 
-        window.addEventListener('mousedown', (e) => {
-            explode(e.clientX, e.clientY);
-        });
-
+        window.addEventListener('mousedown', (e) => createFirework(e.clientX, e.clientY));
         window.addEventListener('resize', () => {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
