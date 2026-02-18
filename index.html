@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Bon Week-end - Double Explosion</title>
+    <title>Bon Week-end - Champagne</title>
     <style>
         :root {
             --bg-start: #1a001a;
@@ -81,10 +81,10 @@
         }
 
         @keyframes superBeat {
-            0% { transform: scale(1); color: var(--pink); filter: drop-shadow(0 0 5px var(--pink)); }
-            15% { transform: scale(1.3); color: var(--yellow); filter: drop-shadow(0 0 25px var(--yellow)); }
-            45% { transform: scale(1.5); color: var(--white); filter: drop-shadow(0 0 50px var(--pink)); }
-            100% { transform: scale(1); color: var(--pink); filter: drop-shadow(0 0 5px var(--pink)); }
+            0% { transform: scale(1); filter: drop-shadow(0 0 5px var(--pink)); }
+            15% { transform: scale(1.3); filter: drop-shadow(0 0 25px var(--yellow)); }
+            45% { transform: scale(1.5); filter: drop-shadow(0 0 50px var(--pink)); }
+            100% { transform: scale(1); filter: drop-shadow(0 0 5px var(--pink)); }
         }
     </style>
 </head>
@@ -96,8 +96,8 @@
         <div class="arc-wrapper" id="text-arc"></div>
         
         <div class="hearts">
-            <div class="heart" id="heart1">❤</div>
-            <div class="heart" id="heart2" style="animation-delay: 0.15s;">❤</div>
+            <div class="heart" id="heart1">🥂</div>
+            <div class="heart" id="heart2" style="animation-delay: 0.15s;">🥂</div>
         </div>
     </div>
 
@@ -156,7 +156,7 @@
                 this.gravity = 0.15;
                 this.canSplit = canSplit;
                 this.life = 0;
-                this.splitTime = Math.floor(Math.random() * 20) + 15; // Temps avant le 2ème étage
+                this.splitTime = Math.floor(Math.random() * 20) + 15;
             }
 
             draw() {
@@ -178,7 +178,6 @@
                 this.alpha -= this.canSplit ? 0.01 : 0.02;
                 this.life++;
 
-                // Logique du 2ème étage (éclatement)
                 if (this.canSplit && this.life === this.splitTime) {
                     this.split();
                 }
@@ -192,12 +191,11 @@
                     };
                     particles.push(new Particle(this.x, this.y, this.color, v, false));
                 }
-                this.alpha = 0; // La particule mère disparaît
+                this.alpha = 0;
             }
         }
 
         const createFirework = (x, y) => {
-            // Premier étage : lancement de particules mères
             for (let i = 0; i < 40; i++) {
                 const color = COLORS[Math.floor(Math.random() * COLORS.length)];
                 const v = {
