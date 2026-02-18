@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bon Week-end</title>
+    <style>
+        :root {
+            --bg-start: #1a001a; /* Teinte légèrement violacée pour le rose */
+            --bg-end: #000000;
+            --pink: #FF69B4;
+            --pink-light: #FFB6C1;
+            --yellow: #FFD700;
+            --yellow-light: #FFFACD;
+            --white: #FFFFFF;
+        }
+
+        body {
+            background: radial-gradient(circle at bottom, var(--bg-start) 0%, var(--bg-end) 100%);
+            margin: 0;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            font-family: 'Times New Roman', serif;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 0;
+        }
+
+        .container {
+            position: relative;
+            z-index: 10;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            pointer-events: none;
+        }
+
+        .arc-wrapper {
+            position: relative;
+            width: 100%;
+            height: 50vh;
+            margin-top: 5vh;
+            display: flex;
+            justify-content: center;
+        }
+
+        .char {
+            position: absolute;
+            font-weight: 900;
+            text-transform: uppercase;
+            line-height: 1;
+            animation: liquidGlow 3s infinite alternate;
+            transition: all 0.5s ease-out;
+            will-change: transform, color;
+        }
+
+        @keyframes liquidGlow {
+            0% { color: var(--yellow); text-shadow: 0 0 10px var(--yellow); }
+            100% { color: var(--pink); text-shadow: 0 0 20px var(--pink), 0 0 30px var(--yellow); }
+        }
+
+        .hearts {
+            display: flex;
+            gap: 5vw;
+            margin-bottom: 10vh;
+            pointer-events: auto;
+        }
+
+        .heart {
+            font-size: 20vmin;
+            animation: superBeat 1.3s infinite cubic-bezier(0.2, 0.6, 0.35, 1);
+            cursor: pointer;
+        }
+
+        .h2 { animation-delay: 0.15s; }
+
+        @keyframes superBeat {
+            0% { transform: scale(1); color: var(--pink); filter: drop-shadow(0 0 5px var(--pink)); }
+            15% { transform: scale(1.3); color: var(--yellow); filter: drop-shadow(0 0 25px var(--yellow)); }
+            45% { transform: scale(1.5); color: var(--white); filter: drop-shadow(0 0 50px var(--pink)); }
+            100% { transform: scale(1); color: var(--pink); filter: drop-shadow(0 0 5px var(--pink)); }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="canvas"></canvas>
+    
+    <div class="container">
+        <div class="arc-wrapper" id="text-arc"></div>
+        
+        <div class="hearts">
+            <div class="heart" id="heart1">❤</div>
+            <div class="heart h2" id="heart2">❤</div>
+        </div>
+    </div>
+
+    <script>
+    {
+        const TEXT_CONTENT = "BON WEEK-END";
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const arcWrapper = document.getElementById('text-arc');
+        
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        
+        let particles = [];
+
+        TEXT_CONTENT.split('').forEach(char => {
+            const span = document.createElement('span');
+            span.className = 'char';
+            span.textContent = char;
+            arcWrapper.appendChild(span);
+        });
+
+        const layoutText = () => {
+            const chars = document.querySelectorAll('.char');
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            const isMobile = w < 800;
+            const count = chars.length;
+
+            let radius, fontSize, angleStep, startAngle, yOffset;
+
+            if (isMobile) {
+                radius = w * 0.45;
+                fontSize = `${w * 0.10}px`;
+                angleStep = 10;
+                yOffset = h * 0.45;
+            } else {
+                radius = h * 0.8;
+                fontSize = `${h * 0.12}px`;
+                angleStep = 5;
+                yOffset = h * 0.65;
+            }
+
+            startAngle = -(angleStep * (count - 1)) / 2;
+
+            chars.forEach((char, i) => {
+                const angle = startAngle + (i * angleStep);
+                char.style.fontSize = fontSize;
+                char.style.height = `${radius}px`;
+                char.style.transformOrigin = 'bottom center';
+                char.style.transform = `translateY(${yOffset - radius}px) rotate(${angle}deg)`;
+            });
+        };
+
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                // Vitesse légèrement augmentée pour plus d'abondance visuelle
+                this.velocity = {
+                    x: (Math.random() - 0.5) * 15,
+                    y: (Math.random() - 0.5) * 15
+                };
+                this.alpha = 1;
+                this.friction = 0.97; // Plus fluide
+                this.gravity = 0.12;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.alpha;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, Math.random() * 4, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+                ctx.restore();
+            }
+
+            update() {
+                this.velocity.x *= this.friction;
+                this.velocity.y *= this.friction;
+                this.velocity.y += this.gravity;
+                this.x += this.velocity.x;
+                this.y += this.velocity.y;
+                this.alpha -= 0.012;
+            }
+        }
+
+        const explode = (x, y) => {
+            // Palette Jaune et Rose
+            const colors = ['#FFD700', '#FF69B4', '#FF1493', '#FFFACD', '#FFFFFF'];
+            // Nombre de particules augmenté pour "l'abondance"
+            for (let i = 0; i < 150; i++) {
+                particles.push(new Particle(x, y, colors[Math.floor(Math.random() * colors.length)]));
+            }
+        };
+
+        const animate = () => {
+            requestAnimationFrame(animate);
+            ctx.fillStyle = 'rgba(10, 0, 10, 0.2)'; 
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            particles.forEach((p, i) => {
+                if (p.alpha > 0) {
+                    p.update();
+                    p.draw();
+                } else {
+                    particles.splice(i, 1);
+                }
+            });
+        };
+
+        // Gestion Multi-touch (autant d'explosions que de doigts)
+        window.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            Array.from(e.touches).forEach(touch => {
+                explode(touch.clientX, touch.clientY);
+            });
+        }, { passive: false });
+
+        window.addEventListener('mousedown', (e) => {
+            explode(e.clientX, e.clientY);
+        });
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            layoutText();
+        });
+
+        layoutText();
+        animate();
+    }
+    </script>
+</body>
+</html>
